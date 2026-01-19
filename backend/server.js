@@ -56,7 +56,7 @@ const allowedOrigins = [
     'http://127.0.0.1:3000',
     'http://localhost:5500',
     'http://127.0.0.1:5500',
-    'https://mocar-2026.vercel.app', // Your specific frontend
+    'https://mocar.vercel.app', // Your specific frontend
     'https://mocar-2026-dd09r58lh-anubhabs-projects-c17292d5.vercel.app', // Preview URL
     process.env.FRONTEND_URL,       // Env var fallback
     process.env.ADDITIONAL_ORIGIN  // Any other URL
