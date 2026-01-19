@@ -65,71 +65,78 @@ export default function AdminMessagesPage() {
 
     const filteredMessages = filterType === 'All'
         ? messages
-        : messages.filter(m => m.inquiry_type === filterType);
+        : filterType === 'Date'
+            ? [...messages].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Sort logic if date selected, though default is sorted
+            : messages.filter(m => filterType === 'Vehicle Type' ? m.inquiry_type === 'Booking' : m.inquiry_type === filterType);
+
+    // Helper to format message body
+    const formatMessage = (msg) => {
+        // Simple replace to make it structured
+        return msg.replace(/ Details:/g, "\n\nDetails:")
+            .replace(/•/g, "\n•")
+            .trim();
+    };
 
     return (
         <div style={{ minHeight: '100vh', background: '#f8f9fa' }}>
-            {/* Premium Header */}
-            <div style={{
-                background: '#1a1a1a',
-                color: '#FFD700',
-                padding: '20px 40px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
-                <h1 style={{ margin: 0, fontSize: '1.8rem', letterSpacing: '1px' }}>
-                    <i className="fas fa-envelope-open-text" style={{ marginRight: 10 }}></i>
-                    Admin Inquiries
-                </h1>
-                <button
-                    onClick={() => router.push('/')}
-                    style={{
-                        padding: '10px 25px',
-                        borderRadius: '30px',
-                        border: '2px solid #FFD700',
-                        background: 'transparent',
-                        color: '#FFD700',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.3s'
-                    }}
-                    onMouseOver={e => { e.target.style.background = '#FFD700'; e.target.style.color = '#000'; }}
-                    onMouseOut={e => { e.target.style.background = 'transparent'; e.target.style.color = '#FFD700'; }}
-                >
-                    <i className="fas fa-home" style={{ marginRight: 8 }}></i> Back to Home
-                </button>
-            </div>
 
             <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto' }}>
 
-                {/* Controls & Filter */}
-                <div style={{ display: 'flex', gap: 15, marginBottom: 30, alignItems: 'center' }}>
-                    <span style={{ fontWeight: 'bold', color: '#333' }}>Filter By:</span>
-                    {['All', 'Booking', 'Contact', 'Support'].map(type => (
-                        <button
-                            key={type}
-                            onClick={() => setFilterType(type)}
-                            style={{
-                                padding: '8px 20px',
-                                borderRadius: '20px',
-                                border: 'none',
-                                background: filterType === type ? '#FFD700' : '#e0e0e0',
-                                color: filterType === type ? '#000' : '#555',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                boxShadow: filterType === type ? '0 2px 8px rgba(255, 215, 0, 0.4)' : 'none',
-                                transition: 'all 0.2s'
-                            }}
-                        >
-                            {type}
-                        </button>
-                    ))}
-                    <div style={{ marginLeft: 'auto', color: '#666' }}>
-                        Showing {filteredMessages.length} messages
+                {/* Header & Controls Section */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 30 }}>
+                    <div>
+                        <h1 style={{ margin: '0 0 15px 0', fontSize: '2rem', letterSpacing: '1px', color: '#1a1a1a' }}>
+                            <i className="fas fa-envelope-open-text" style={{ marginRight: 10, color: '#FFD700' }}></i>
+                            Admin Inquiries
+                        </h1>
+
+                        {/* Filters moved here */}
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                            <span style={{ fontWeight: 'bold', color: '#666', fontSize: '0.9rem', marginRight: 5 }}>Filter:</span>
+                            {['All', 'Date', 'Vehicle Type'].map(type => (
+                                <button
+                                    key={type}
+                                    onClick={() => setFilterType(type)}
+                                    style={{
+                                        padding: '6px 16px',
+                                        borderRadius: '20px',
+                                        border: '1px solid #ddd',
+                                        background: filterType === type ? '#222' : '#fff',
+                                        color: filterType === type ? '#FFD700' : '#555',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
                     </div>
+
+                    <button
+                        onClick={() => router.push('/')}
+                        style={{
+                            padding: '10px 25px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            background: '#222',
+                            color: '#FFD700',
+                            cursor: 'pointer',
+                            fontWeight: 'bold',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        <i className="fas fa-arrow-left" style={{ marginRight: 8 }}></i> Back to Home
+                    </button>
+                </div>
+
+                <div style={{ marginBottom: 15, textAlign: 'right', color: '#666', fontSize: '0.9rem' }}>
+                    Showing {filteredMessages.length} messages
                 </div>
 
                 {loading ? (
@@ -163,15 +170,14 @@ export default function AdminMessagesPage() {
                                     <tr>
                                         <td colSpan="6" style={{ padding: 50, textAlign: 'center', color: '#888' }}>
                                             <i className="fas fa-inbox fa-3x" style={{ marginBottom: 15, opacity: 0.3 }}></i>
-                                            <p>No messages found in this category.</p>
+                                            <p>No messages found.</p>
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredMessages.map((m, idx) => (
                                         <tr key={m.id} style={{
                                             borderBottom: '1px solid #f0f0f0',
-                                            background: idx % 2 === 0 ? '#fff' : '#fafafa',
-                                            transition: 'background 0.2s'
+                                            background: idx % 2 === 0 ? '#fff' : '#fafafa'
                                         }} className="hover-row">
                                             <td style={{ padding: '20px 25px', color: '#555', fontSize: '0.9rem' }}>
                                                 {new Date(m.created_at || Date.now()).toLocaleDateString()}
@@ -199,7 +205,9 @@ export default function AdminMessagesPage() {
                                                     {m.inquiry_type}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '20px 25px', color: '#444', lineHeight: '1.5', fontSize: '0.95rem' }}>{m.message}</td>
+                                            <td style={{ padding: '20px 25px', color: '#444', lineHeight: '1.6', fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
+                                                {formatMessage(m.message)}
+                                            </td>
                                             <td style={{ padding: '20px 25px', textAlign: 'center' }}>
                                                 <button
                                                     onClick={() => handleDelete(m.id)}
@@ -211,10 +219,6 @@ export default function AdminMessagesPage() {
                                                         width: 35,
                                                         height: 35,
                                                         cursor: 'pointer',
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        transition: 'all 0.2s'
                                                     }}
                                                     title="Delete Message"
                                                 >
