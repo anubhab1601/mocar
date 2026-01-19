@@ -360,34 +360,18 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     };
 
     try {
-        console.log('Attempting to send OTP email to:', email);
-        console.log('Using Brevo API Key:', BREVO_API_KEY ? 'Present' : 'MISSING');
+        console.log('Generated OTP for:', email, ':', otp);
 
-        const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: {
-                'api-key': BREVO_API_KEY,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                sender: { email: FROM_EMAIL },
-                to: [{ email: email }],
-                subject: 'MoCar Admin Password Reset OTP',
-                htmlContent: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
-            })
+        // For MVP/Demo: We return the OTP to the frontend so the Client can send the email via EmailJS.
+        // In Production: You would activate your Brevo account and send from here.
+        res.json({
+            success: true,
+            message: 'OTP generated. Sending via client...',
+            debug_otp: otp // TEMPORARY: Allow frontend to send the email
         });
-
-        if (!brevoRes.ok) {
-            const errData = await brevoRes.text();
-            throw new Error(`Brevo API Error: ${errData}`);
-        }
-
-        console.log('OTP email sent successfully via Resend');
-        res.json({ success: true, message: 'OTP sent to your email' });
     } catch (err) {
-        console.error('Email error in forgot-password:', err);
-        res.status(500).json({ success: false, message: 'Failed to send email. Check logs.' });
+        console.error('Error in forgot-password:', err);
+        res.status(500).json({ success: false, message: 'Server error generating OTP' });
     }
 });
 
@@ -617,51 +601,11 @@ app.post('/api/contact', async (req, res) => {
     }
 
     // Send email notification via SendGrid
-    // Send email notification via Brevo
-    if (BREVO_API_KEY) {
-        console.log('Attempting to send email to:', ADMIN_EMAIL);
+    // For Contact Form, we just save to DB.
+    // Frontend can optionally send a confirmation email via EmailJS if configured there.
+    console.log('Message saved. Email notification skipped (handled by frontend or disabled).');
 
-        try {
-            const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: {
-                    'api-key': BREVO_API_KEY,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    sender: { name: 'MoCar Contact', email: FROM_EMAIL },
-                    to: [{ email: ADMIN_EMAIL }],
-                    subject: `New Inquiry from ${name} (${inquiryType})`,
-                    htmlContent: `
-                        <h3>New Inquiry Received</h3>
-                        <p><strong>Name:</strong> ${name}</p>
-                        <p><strong>Phone:</strong> ${phone}</p>
-                        <p><strong>Email:</strong> ${email}</p>
-                        <p><strong>Type:</strong> ${inquiryType}</p>
-                        <br/>
-                        <p><strong>Message:</strong></p>
-                        <p>${message}</p>
-                    `
-                })
-            });
-
-            if (!brevoRes.ok) {
-                const errData = await brevoRes.text();
-                throw new Error(`Brevo API Error: ${errData}`);
-            }
-
-            console.log('✓ Email sent successfully via Brevo to', ADMIN_EMAIL);
-            res.json({ success: true, message: 'Message sent successfully' });
-        } catch (error) {
-            console.error('Error sending contact email:', error);
-            // Still return success since DB save worked
-            res.status(202).json({ success: true, message: 'Message received (email pending verification)' });
-        }
-    } else {
-        console.log('⚠ BREVO_API_KEY not set. Email notifications disabled.');
-        res.json({ success: true, message: 'Message received (email disabled)' });
-    }
+    res.json({ success: true, message: 'Message received and saved' });
 });
 
 app.listen(PORT, () => {
