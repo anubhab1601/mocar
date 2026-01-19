@@ -40,7 +40,7 @@ const upload = multer({ storage: storage });
 // Email Config
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_PORT = process.env.SMTP_PORT || 465;
+const SMTP_PORT = process.env.SMTP_PORT || 587; // Changed default to 587
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
 // Email Setup with explicit Gmail settings
