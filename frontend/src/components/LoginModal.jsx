@@ -65,16 +65,24 @@ export default function LoginModal({ isOpen, onClose }) {
       });
       const data = await res.json();
       if (data.success) {
+        setLoading(false);
         setMode('verify');
-        setSuccessMsg('OTP sent to your email!');
+        setSuccessMsg(data.message);
+
+        // DEBUG: For demo deployment where email is blocked, show the OTP directly
+        if (data.debug_otp) {
+          alert(`[DEV MODE] Your OTP is: ${data.debug_otp}`);
+          console.log("OTP:", data.debug_otp);
+        }
       } else {
+        setLoading(false);
         setError(data.message || 'Failed to send OTP');
       }
     } catch (err) {
       console.error('Error detail:', err);
+      setLoading(false);
       setError('Network error: ' + (err.message || String(err)));
     }
-    setLoading(false);
   };
 
   const handleResetPassword = async (e) => {
