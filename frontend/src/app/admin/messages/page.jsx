@@ -227,9 +227,11 @@ export default function AdminMessagesPage() {
                                             background: idx % 2 === 0 ? '#fff' : '#fafafa'
                                         }} className="hover-row">
                                             <td style={{ padding: '20px 25px', color: '#555', fontSize: '0.9rem' }}>
-                                                {new Date(m.created_at || Date.now()).toLocaleDateString()}
+                                                {new Date(m.created_at || Date.now()).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
                                                 <br />
-                                                <small style={{ opacity: 0.7 }}>{new Date(m.created_at || Date.now()).toLocaleTimeString()}</small>
+                                                <small style={{ opacity: 0.7 }}>
+                                                    {new Date(m.created_at || Date.now()).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                                </small>
                                             </td>
                                             <td style={{ padding: '20px 25px', fontWeight: 'bold', color: '#333' }}>{m.name}</td>
                                             <td style={{ padding: '20px 25px' }}>
