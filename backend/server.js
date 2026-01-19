@@ -37,27 +37,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Email Config
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-const SMTP_PORT = process.env.SMTP_PORT || 587; // Changed default to 587
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
+// Resend Config (API Key from Environment)
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+// On Resend Free Tier, you can only send 'from' 'onboarding@resend.dev' to your verified email
+const resend = new Resend(RESEND_API_KEY);
 
-// Email Setup with explicit Gmail settings
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: parseInt(SMTP_PORT),
-    secure: SMTP_PORT == 465, // true for 465 (SSL), false for 587 (TLS)
-    auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS
-    },
-    tls: {
-        rejectUnauthorized: false // Fix for some cloud environments
-    },
-    connectionTimeout: 30000,  // 30 seconds
-    socketTimeout: 30000       // 30 seconds
-});
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
 // Determine allowed origins
 const allowedOrigins = [
@@ -378,17 +363,20 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     try {
         console.log('Attempting to send OTP email to:', email);
-        await transporter.sendMail({
-            from: `"MoCar Admin" <${SMTP_USER}>`,
-            to: email,
+        console.log('Using Resend API Key:', RESEND_API_KEY ? 'Present' : 'MISSING');
+
+        await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: email, // Since you are admin, this MUST be the email you signed up to Resend with (or verify domain)
             subject: 'MoCar Admin Password Reset OTP',
-            text: `Your OTP for password reset is: ${otp}. It expires in 10 minutes.`
+            html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
         });
-        console.log('OTP email sent successfully');
+
+        console.log('OTP email sent successfully via Resend');
         res.json({ success: true, message: 'OTP sent to your email' });
     } catch (err) {
         console.error('Email error in forgot-password:', err);
-        res.status(500).json({ success: false, message: 'Failed to send email. Check server logs.' });
+        res.status(500).json({ success: false, message: 'Failed to send email. Check logs.' });
     }
 });
 
@@ -617,37 +605,35 @@ app.post('/api/contact', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Failed to save message' });
     }
 
-    // Send email notification
-    if (SMTP_USER && SMTP_PASS) {
+    // Send email notification via Resend
+    if (RESEND_API_KEY) {
         console.log('Attempting to send email to:', ADMIN_EMAIL);
-        const mailOptions = {
-            from: `"MoCar Website" <${SMTP_USER}>`,
-            to: ADMIN_EMAIL,
-            subject: `New Inquiry from ${name} (${inquiryType})`,
-            text: `
-Name: ${name}
-Phone: ${phone}
-Email: ${email}
-Type: ${inquiryType}
-
-Message:
-${message}
-            `
-        };
 
         try {
-            await transporter.sendMail(mailOptions);
-            console.log('✓ Email sent successfully to', ADMIN_EMAIL);
+            await resend.emails.send({
+                from: 'onboarding@resend.dev',
+                to: ADMIN_EMAIL,
+                subject: `New Inquiry from ${name} (${inquiryType})`,
+                html: `
+                    <h3>New Inquiry Received</h3>
+                    <p><strong>Name:</strong> ${name}</p>
+                    <p><strong>Phone:</strong> ${phone}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Type:</strong> ${inquiryType}</p>
+                    <br/>
+                    <p><strong>Message:</strong></p>
+                    <p>${message}</p>
+                `
+            });
+            console.log('✓ Email sent successfully via Resend to', ADMIN_EMAIL);
             res.json({ success: true, message: 'Message sent successfully' });
         } catch (error) {
-            console.error('Error sending contact email:', error.message);
-            // Message was saved to DB, so still return success but warn about email
-            res.status(202).json({ success: true, message: 'Message received (email notification pending)' });
+            console.error('Error sending contact email:', error);
+            // Still return success since DB save worked
+            res.status(202).json({ success: true, message: 'Message received (email pending verification)' });
         }
     } else {
-        console.log('⚠ SMTP credentials not set. Email notifications disabled.');
-        console.log('SMTP_USER:', SMTP_USER ? 'SET' : 'NOT SET');
-        console.log('SMTP_PASS:', SMTP_PASS ? 'SET' : 'NOT SET');
+        console.log('⚠ RESEND_API_KEY not set. Email notifications disabled.');
         res.json({ success: true, message: 'Message received (email disabled)' });
     }
 });
