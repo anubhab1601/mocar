@@ -1,0 +1,6 @@
+@import './mocar.css';
+
+/* Basic overrides */
+html, body { background: #ffffff; color: #212121; }
+a { color: #ffc107; text-decoration: none; }
+a:hover { color: #ff8c00; }
