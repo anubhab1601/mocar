@@ -68,7 +68,18 @@ export default function AdminMessagesPage() {
         <div style={{ padding: '40px 20px', maxWidth: '1200px', margin: '0 auto', minHeight: '80vh' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
                 <h1>Admin Inquiries</h1>
-                <button onClick={() => router.push('/')} className="btn btn-outline">
+                <button
+                    onClick={() => router.push('/')}
+                    style={{
+                        padding: '10px 20px',
+                        borderRadius: '5px',
+                        border: '1px solid #ccc',
+                        background: 'rgba(0, 0, 0, 0.1)', // Little dark but transparent
+                        color: 'black', // Text visible (black)
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
                     Back to Home
                 </button>
             </div>
