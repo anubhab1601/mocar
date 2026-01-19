@@ -628,12 +628,14 @@ ${message}
             console.log('Email sent successfully to', ADMIN_EMAIL);
         } catch (error) {
             console.error('Error sending contact email:', error);
-            // We generally don't fail the request if just email fails, but we should know.
+            // DEBUG: Return error to frontend so we can see it
+            return res.status(500).json({ success: false, message: 'Email failed: ' + error.message });
         }
     } else {
         console.log('SMTP credentials not set. Skipping email.');
     }
 
+    console.log('Sending final success response');
     res.json({ success: true, message: 'Message received' });
 });
 
