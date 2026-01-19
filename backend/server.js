@@ -42,8 +42,11 @@ const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
+// Email Setup with explicit Gmail settings
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // true for 465, false for other ports
     auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
