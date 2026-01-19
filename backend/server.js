@@ -623,19 +623,16 @@ ${message}
             `
         };
 
-        try {
-            await transporter.sendMail(mailOptions);
-            console.log('Email sent successfully to', ADMIN_EMAIL);
-        } catch (error) {
-            console.error('Error sending contact email:', error);
-            // DEBUG: Return error to frontend so we can see it
-            return res.status(500).json({ success: false, message: 'Email failed: ' + error.message });
-        }
+        // Fire and forget email to avoid UI blocking
+        transporter.sendMail(mailOptions)
+            .then(() => console.log('Email sent successfully to', ADMIN_EMAIL))
+            .catch(error => console.error('Error sending contact email:', error));
     } else {
         console.log('SMTP credentials not set. Skipping email.');
     }
 
-    console.log('Sending final success response');
+    console.log('Sending immediate success response');
+    // Return success immediately without waiting for email
     res.json({ success: true, message: 'Message received' });
 });
 
