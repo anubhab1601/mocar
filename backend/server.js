@@ -605,10 +605,13 @@ app.post('/api/contact', async (req, res) => {
     try {
         db.prepare(`INSERT INTO messages (name, email, phone, inquiry_type, message) VALUES (?, ?, ?, ?, ?)`)
             .run(name, email, phone, inquiryType, message);
+        console.log(`✓ Message saved to DB from ${name}`);
     } catch (e) {
         console.error('DB Error:', e);
+        return res.status(500).json({ success: false, message: 'Failed to save message' });
     }
 
+    // Send email notification
     if (SMTP_USER && SMTP_PASS) {
         console.log('Attempting to send email to:', ADMIN_EMAIL);
         const mailOptions = {
@@ -626,17 +629,21 @@ ${message}
             `
         };
 
-        // Fire and forget email to avoid UI blocking
-        transporter.sendMail(mailOptions)
-            .then(() => console.log('Email sent successfully to', ADMIN_EMAIL))
-            .catch(error => console.error('Error sending contact email:', error));
+        try {
+            await transporter.sendMail(mailOptions);
+            console.log('✓ Email sent successfully to', ADMIN_EMAIL);
+            res.json({ success: true, message: 'Message sent successfully' });
+        } catch (error) {
+            console.error('Error sending contact email:', error.message);
+            // Message was saved to DB, so still return success but warn about email
+            res.status(202).json({ success: true, message: 'Message received (email notification pending)' });
+        }
     } else {
-        console.log('SMTP credentials not set. Skipping email.');
+        console.log('⚠ SMTP credentials not set. Email notifications disabled.');
+        console.log('SMTP_USER:', SMTP_USER ? 'SET' : 'NOT SET');
+        console.log('SMTP_PASS:', SMTP_PASS ? 'SET' : 'NOT SET');
+        res.json({ success: true, message: 'Message received (email disabled)' });
     }
-
-    console.log('Sending immediate success response');
-    // Return success immediately without waiting for email
-    res.json({ success: true, message: 'Message received' });
 });
 
 app.listen(PORT, () => {
