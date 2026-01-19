@@ -592,9 +592,10 @@ app.post('/api/contact', async (req, res) => {
     }
 
     try {
-        db.prepare(`INSERT INTO messages (name, email, phone, inquiry_type, message) VALUES (?, ?, ?, ?, ?)`)
-            .run(name, email, phone, inquiryType, message);
-        console.log(`✓ Message saved to DB from ${name}`);
+        const now = new Date().toISOString();
+        db.prepare(`INSERT INTO messages (name, email, phone, inquiry_type, message, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+            .run(name, email, phone, inquiryType, message, now);
+        console.log(`✓ Message saved to DB from ${name} at ${now}`);
     } catch (e) {
         console.error('DB Error:', e);
         return res.status(500).json({ success: false, message: 'Failed to save message' });
