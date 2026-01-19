@@ -284,7 +284,7 @@ export default function HomePage() {
                   <button
                     onClick={() => window.location.href = '/admin/messages'}
                     className="btn btn-secondary btn-lg"
-                    style={{ marginLeft: 10, background: '#222', border: '1px solid #ffd700', padding: '10px 20px', fontSize: '1.2rem' }}
+                    style={{ marginLeft: 50, background: '#222', border: '1px solid #ffd700', padding: '10px 20px', fontSize: '1.2rem' }}
                   >
                     View Inquiries
                   </button>
