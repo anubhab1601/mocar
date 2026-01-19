@@ -608,6 +608,27 @@ app.post('/api/contact', async (req, res) => {
     res.json({ success: true, message: 'Message received and saved' });
 });
 
+// Admin: Get all messages
+app.get('/api/contact', requireAdmin, (req, res) => {
+    try {
+        const messages = db.prepare('SELECT * FROM messages ORDER BY id DESC').all();
+        res.json(messages);
+    } catch (err) {
+        console.error('Error fetching messages:', err);
+        res.status(500).json({ message: 'Failed to fetch messages' });
+    }
+});
+
+// Admin: Delete a message
+app.delete('/api/contact/:id', requireAdmin, (req, res) => {
+    try {
+        db.prepare('DELETE FROM messages WHERE id = ?').run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ success: false });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`🚀 better - sqlite3 backend running on port ${PORT} `);
 });
