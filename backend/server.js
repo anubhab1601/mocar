@@ -40,7 +40,6 @@ const upload = multer({ storage: storage });
 // Resend Config (API Key from Environment)
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 // On Resend Free Tier, you can only send 'from' 'onboarding@resend.dev' to your verified email
-const resend = new Resend(RESEND_API_KEY);
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
@@ -365,12 +364,24 @@ app.post('/api/auth/forgot-password', async (req, res) => {
         console.log('Attempting to send OTP email to:', email);
         console.log('Using Resend API Key:', RESEND_API_KEY ? 'Present' : 'MISSING');
 
-        await resend.emails.send({
-            from: 'onboarding@resend.dev',
-            to: email, // Since you are admin, this MUST be the email you signed up to Resend with (or verify domain)
-            subject: 'MoCar Admin Password Reset OTP',
-            html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
+        const resendRes = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: 'onboarding@resend.dev',
+                to: email,
+                subject: 'MoCar Admin Password Reset OTP',
+                html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
+            })
         });
+
+        if (!resendRes.ok) {
+            const errData = await resendRes.text();
+            throw new Error(`Resend API Error: ${errData}`);
+        }
 
         console.log('OTP email sent successfully via Resend');
         res.json({ success: true, message: 'OTP sent to your email' });
@@ -610,21 +621,34 @@ app.post('/api/contact', async (req, res) => {
         console.log('Attempting to send email to:', ADMIN_EMAIL);
 
         try {
-            await resend.emails.send({
-                from: 'onboarding@resend.dev',
-                to: ADMIN_EMAIL,
-                subject: `New Inquiry from ${name} (${inquiryType})`,
-                html: `
-                    <h3>New Inquiry Received</h3>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Phone:</strong> ${phone}</p>
-                    <p><strong>Email:</strong> ${email}</p>
-                    <p><strong>Type:</strong> ${inquiryType}</p>
-                    <br/>
-                    <p><strong>Message:</strong></p>
-                    <p>${message}</p>
-                `
+            const resendRes = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${RESEND_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: 'onboarding@resend.dev',
+                    to: ADMIN_EMAIL,
+                    subject: `New Inquiry from ${name} (${inquiryType})`,
+                    html: `
+                        <h3>New Inquiry Received</h3>
+                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Phone:</strong> ${phone}</p>
+                        <p><strong>Email:</strong> ${email}</p>
+                        <p><strong>Type:</strong> ${inquiryType}</p>
+                        <br/>
+                        <p><strong>Message:</strong></p>
+                        <p>${message}</p>
+                    `
+                })
             });
+
+            if (!resendRes.ok) {
+                const errData = await resendRes.text();
+                throw new Error(`Resend API Error: ${errData}`);
+            }
+
             console.log('✓ Email sent successfully via Resend to', ADMIN_EMAIL);
             res.json({ success: true, message: 'Message sent successfully' });
         } catch (error) {
