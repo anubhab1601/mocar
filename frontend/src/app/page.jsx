@@ -119,6 +119,47 @@ export default function HomePage() {
   const [changeUserForm, setChangeUserForm] = useState({ currentPassword: '', newUsername: '' });
   const [changeUserMsg, setChangeUserMsg] = useState({ type: '', text: '' });
 
+  // Messages Logic
+  const [messages, setMessages] = useState([]);
+  const [showMessages, setShowMessages] = useState(false);
+
+  const fetchMessages = async () => {
+    try {
+      const token = localStorage.getItem('mo_car_admin_token');
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5500/api';
+      const res = await fetch(`${API_BASE}/contact`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch messages', err);
+    }
+  };
+
+  useEffect(() => {
+    if (showAdminPanel && showMessages) {
+      fetchMessages();
+    }
+  }, [showAdminPanel, showMessages]);
+
+  const handleDeleteMessage = async (id) => {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    try {
+      const token = localStorage.getItem('mo_car_admin_token');
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5500/api';
+      await fetch(`${API_BASE}/contact/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setMessages(messages.filter(m => m.id !== id));
+    } catch (err) {
+      console.error('Failed to delete message', err);
+    }
+  };
+
   const handleChangeUsername = async (e) => {
     e.preventDefault();
     setChangeUserMsg({ type: '', text: '' });
@@ -266,7 +307,54 @@ export default function HomePage() {
                   maxHeight: '400px',
                   overflowY: 'auto'
                 }}>
-                  <h4>Admin Panel</h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4>Admin Panel</h4>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => setShowMessages(!showMessages)}
+                      style={{ padding: '5px 15px', fontSize: '0.9rem' }}
+                    >
+                      {showMessages ? 'Hide Inquiries' : 'View Inquiries'}
+                    </button>
+                  </div>
+
+                  {showMessages && (
+                    <div style={{ marginTop: 20, marginBottom: 20, padding: 10, background: '#fff', borderRadius: 8, border: '1px solid #ddd' }}>
+                      <h5>Recent Inquiries</h5>
+                      <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                          <thead>
+                            <tr style={{ background: '#f0f0f0', textAlign: 'left' }}>
+                              <th style={{ padding: 8 }}>Date</th>
+                              <th style={{ padding: 8 }}>Name</th>
+                              <th style={{ padding: 8 }}>Contact</th>
+                              <th style={{ padding: 8 }}>Message</th>
+                              <th style={{ padding: 8 }}>Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {messages.length === 0 ? (
+                              <tr><td colSpan="5" style={{ padding: 20, textAlign: 'center' }}>No inquiries found.</td></tr>
+                            ) : (
+                              messages.map(m => (
+                                <tr key={m.id} style={{ borderBottom: '1px solid #eee' }}>
+                                  <td style={{ padding: 8 }}>{new Date(m.created_at || Date.now()).toLocaleDateString()}</td>
+                                  <td style={{ padding: 8 }}>{m.name}<br /><small>{m.inquiry_type}</small></td>
+                                  <td style={{ padding: 8 }}>{m.phone}<br /><small>{m.email}</small></td>
+                                  <td style={{ padding: 8 }}>{m.message}</td>
+                                  <td style={{ padding: 8 }}>
+                                    <button onClick={() => handleDeleteMessage(m.id)} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>
+                                      <i className="fas fa-trash"></i>
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
 
 
