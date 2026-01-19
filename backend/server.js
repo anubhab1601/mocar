@@ -37,10 +37,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Resend Config (API Key from Environment)
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-// On Resend Free Tier, you can only send 'from' 'onboarding@resend.dev' to your verified email
-
+// SendGrid Config
+const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+// IMPORTANT: Use the verified email from SendGrid
+const FROM_EMAIL = process.env.FROM_EMAIL || 'anubhabmishra2006@gmail.com';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
 // Determine allowed origins
@@ -362,25 +362,28 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     try {
         console.log('Attempting to send OTP email to:', email);
-        console.log('Using Resend API Key:', RESEND_API_KEY ? 'Present' : 'MISSING');
+        console.log('Using SendGrid API Key:', SENDGRID_API_KEY ? 'Present' : 'MISSING');
 
-        const resendRes = await fetch('https://api.resend.com/emails', {
+        const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${RESEND_API_KEY}`,
+                'Authorization': `Bearer ${SENDGRID_API_KEY}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                from: 'onboarding@resend.dev',
-                to: email,
+                personalizations: [{ to: [{ email: email }] }],
+                from: { email: FROM_EMAIL },
                 subject: 'MoCar Admin Password Reset OTP',
-                html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
+                content: [{
+                    type: 'text/html',
+                    value: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
+                }]
             })
         });
 
-        if (!resendRes.ok) {
-            const errData = await resendRes.text();
-            throw new Error(`Resend API Error: ${errData}`);
+        if (!sgRes.ok) {
+            const errData = await sgRes.text();
+            throw new Error(`SendGrid API Error: ${errData}`);
         }
 
         console.log('OTP email sent successfully via Resend');
@@ -616,40 +619,43 @@ app.post('/api/contact', async (req, res) => {
         return res.status(500).json({ success: false, message: 'Failed to save message' });
     }
 
-    // Send email notification via Resend
-    if (RESEND_API_KEY) {
+    // Send email notification via SendGrid
+    if (SENDGRID_API_KEY) {
         console.log('Attempting to send email to:', ADMIN_EMAIL);
 
         try {
-            const resendRes = await fetch('https://api.resend.com/emails', {
+            const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${RESEND_API_KEY}`,
+                    'Authorization': `Bearer ${SENDGRID_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    from: 'onboarding@resend.dev',
-                    to: ADMIN_EMAIL,
+                    personalizations: [{ to: [{ email: ADMIN_EMAIL }] }],
+                    from: { email: FROM_EMAIL },
                     subject: `New Inquiry from ${name} (${inquiryType})`,
-                    html: `
-                        <h3>New Inquiry Received</h3>
-                        <p><strong>Name:</strong> ${name}</p>
-                        <p><strong>Phone:</strong> ${phone}</p>
-                        <p><strong>Email:</strong> ${email}</p>
-                        <p><strong>Type:</strong> ${inquiryType}</p>
-                        <br/>
-                        <p><strong>Message:</strong></p>
-                        <p>${message}</p>
-                    `
+                    content: [{
+                        type: 'text/html',
+                        value: `
+                            <h3>New Inquiry Received</h3>
+                            <p><strong>Name:</strong> ${name}</p>
+                            <p><strong>Phone:</strong> ${phone}</p>
+                            <p><strong>Email:</strong> ${email}</p>
+                            <p><strong>Type:</strong> ${inquiryType}</p>
+                            <br/>
+                            <p><strong>Message:</strong></p>
+                            <p>${message}</p>
+                        `
+                    }]
                 })
             });
 
-            if (!resendRes.ok) {
-                const errData = await resendRes.text();
-                throw new Error(`Resend API Error: ${errData}`);
+            if (!sgRes.ok) {
+                const errData = await sgRes.text();
+                throw new Error(`SendGrid API Error: ${errData}`);
             }
 
-            console.log('✓ Email sent successfully via Resend to', ADMIN_EMAIL);
+            console.log('✓ Email sent successfully via SendGrid to', ADMIN_EMAIL);
             res.json({ success: true, message: 'Message sent successfully' });
         } catch (error) {
             console.error('Error sending contact email:', error);
@@ -657,11 +663,11 @@ app.post('/api/contact', async (req, res) => {
             res.status(202).json({ success: true, message: 'Message received (email pending verification)' });
         }
     } else {
-        console.log('⚠ RESEND_API_KEY not set. Email notifications disabled.');
+        console.log('⚠ SENDGRID_API_KEY not set. Email notifications disabled.');
         res.json({ success: true, message: 'Message received (email disabled)' });
     }
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 better-sqlite3 backend running on port ${PORT}`);
+    console.log(`🚀 better - sqlite3 backend running on port ${PORT} `);
 });
