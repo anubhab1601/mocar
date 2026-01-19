@@ -280,6 +280,15 @@ export default function HomePage() {
               <div className="hero-cta">
                 <a href="#booking" className="btn btn-primary btn-lg">Book Now</a>
                 <a href="/cars" className="btn btn-outline btn-lg">View Fleet</a>
+                {mounted && isAdmin && (
+                  <button
+                    onClick={() => { setShowAdminPanel(true); setShowMessages(true); }}
+                    className="btn btn-secondary btn-lg"
+                    style={{ marginLeft: 10, background: '#222', border: '1px solid #ffd700' }}
+                  >
+                    View Inquiries
+                  </button>
+                )}
               </div>
             </div>
 
@@ -309,13 +318,6 @@ export default function HomePage() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h4>Admin Panel</h4>
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => setShowMessages(!showMessages)}
-                      style={{ padding: '5px 15px', fontSize: '0.9rem' }}
-                    >
-                      {showMessages ? 'Hide Inquiries' : 'View Inquiries'}
-                    </button>
                   </div>
 
                   {showMessages && (
