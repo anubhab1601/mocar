@@ -40,17 +40,20 @@ const upload = multer({ storage: storage });
 // Email Config
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
+const SMTP_PORT = process.env.SMTP_PORT || 465;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
 // Email Setup with explicit Gmail settings
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // true for 465, false for other ports
+    port: parseInt(SMTP_PORT),
+    secure: SMTP_PORT == 465, // true for 465 (SSL), false for 587 (TLS)
     auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
-    }
+    },
+    connectionTimeout: 10000,  // 10 seconds
+    socketTimeout: 10000       // 10 seconds
 });
 
 // Determine allowed origins
