@@ -368,16 +368,18 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     };
 
     try {
+        console.log('Attempting to send OTP email to:', email);
         await transporter.sendMail({
             from: `"MoCar Admin" <${SMTP_USER}>`,
             to: email,
             subject: 'MoCar Admin Password Reset OTP',
             text: `Your OTP for password reset is: ${otp}. It expires in 10 minutes.`
         });
+        console.log('OTP email sent successfully');
         res.json({ success: true, message: 'OTP sent to your email' });
     } catch (err) {
-        console.error('Email error:', err);
-        res.status(500).json({ success: false, message: 'Failed to send email' });
+        console.error('Email error in forgot-password:', err);
+        res.status(500).json({ success: false, message: 'Failed to send email. Check server logs.' });
     }
 });
 
@@ -605,6 +607,7 @@ app.post('/api/contact', async (req, res) => {
     }
 
     if (SMTP_USER && SMTP_PASS) {
+        console.log('Attempting to send email to:', ADMIN_EMAIL);
         const mailOptions = {
             from: `"MoCar Website" <${SMTP_USER}>`,
             to: ADMIN_EMAIL,
@@ -622,9 +625,10 @@ ${message}
 
         try {
             await transporter.sendMail(mailOptions);
-            console.log('Email sent to', ADMIN_EMAIL);
+            console.log('Email sent successfully to', ADMIN_EMAIL);
         } catch (error) {
-            console.error('Error sending email:', error);
+            console.error('Error sending contact email:', error);
+            // We generally don't fail the request if just email fails, but we should know.
         }
     } else {
         console.log('SMTP credentials not set. Skipping email.');
