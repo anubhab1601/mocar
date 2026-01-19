@@ -55,8 +55,8 @@ const transporter = nodemailer.createTransport({
     tls: {
         rejectUnauthorized: false // Fix for some cloud environments
     },
-    connectionTimeout: 10000,  // 10 seconds
-    socketTimeout: 10000       // 10 seconds
+    connectionTimeout: 30000,  // 30 seconds
+    socketTimeout: 30000       // 30 seconds
 });
 
 // Determine allowed origins
