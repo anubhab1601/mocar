@@ -282,7 +282,7 @@ export default function HomePage() {
                 <a href="/cars" className="btn btn-outline btn-lg">View Fleet</a>
                 {mounted && isAdmin && (
                   <button
-                    onClick={() => { setShowAdminPanel(true); setShowMessages(true); }}
+                    onClick={() => window.location.href = '/admin/messages'}
                     className="btn btn-secondary btn-lg"
                     style={{ marginLeft: 10, background: '#222', border: '1px solid #ffd700' }}
                   >
