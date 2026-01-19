@@ -37,9 +37,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// SendGrid Config
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
-// IMPORTANT: Use the verified email from SendGrid
+// Brevo (Sendinblue) Config
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const FROM_EMAIL = process.env.FROM_EMAIL || 'anubhabmishra2006@gmail.com';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'anubhabmishra2006@gmail.com';
 
@@ -362,28 +361,26 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     try {
         console.log('Attempting to send OTP email to:', email);
-        console.log('Using SendGrid API Key:', SENDGRID_API_KEY ? 'Present' : 'MISSING');
+        console.log('Using Brevo API Key:', BREVO_API_KEY ? 'Present' : 'MISSING');
 
-        const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+        const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-                'Content-Type': 'application/json'
+                'api-key': BREVO_API_KEY,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
-                personalizations: [{ to: [{ email: email }] }],
-                from: { email: FROM_EMAIL },
+                sender: { email: FROM_EMAIL },
+                to: [{ email: email }],
                 subject: 'MoCar Admin Password Reset OTP',
-                content: [{
-                    type: 'text/html',
-                    value: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
-                }]
+                htmlContent: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>It expires in 10 minutes.</p>`
             })
         });
 
-        if (!sgRes.ok) {
-            const errData = await sgRes.text();
-            throw new Error(`SendGrid API Error: ${errData}`);
+        if (!brevoRes.ok) {
+            const errData = await brevoRes.text();
+            throw new Error(`Brevo API Error: ${errData}`);
         }
 
         console.log('OTP email sent successfully via Resend');
@@ -620,42 +617,41 @@ app.post('/api/contact', async (req, res) => {
     }
 
     // Send email notification via SendGrid
-    if (SENDGRID_API_KEY) {
+    // Send email notification via Brevo
+    if (BREVO_API_KEY) {
         console.log('Attempting to send email to:', ADMIN_EMAIL);
 
         try {
-            const sgRes = await fetch('https://api.sendgrid.com/v3/mail/send', {
+            const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${SENDGRID_API_KEY}`,
-                    'Content-Type': 'application/json'
+                    'api-key': BREVO_API_KEY,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    personalizations: [{ to: [{ email: ADMIN_EMAIL }] }],
-                    from: { email: FROM_EMAIL },
+                    sender: { name: 'MoCar Contact', email: FROM_EMAIL },
+                    to: [{ email: ADMIN_EMAIL }],
                     subject: `New Inquiry from ${name} (${inquiryType})`,
-                    content: [{
-                        type: 'text/html',
-                        value: `
-                            <h3>New Inquiry Received</h3>
-                            <p><strong>Name:</strong> ${name}</p>
-                            <p><strong>Phone:</strong> ${phone}</p>
-                            <p><strong>Email:</strong> ${email}</p>
-                            <p><strong>Type:</strong> ${inquiryType}</p>
-                            <br/>
-                            <p><strong>Message:</strong></p>
-                            <p>${message}</p>
-                        `
-                    }]
+                    htmlContent: `
+                        <h3>New Inquiry Received</h3>
+                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Phone:</strong> ${phone}</p>
+                        <p><strong>Email:</strong> ${email}</p>
+                        <p><strong>Type:</strong> ${inquiryType}</p>
+                        <br/>
+                        <p><strong>Message:</strong></p>
+                        <p>${message}</p>
+                    `
                 })
             });
 
-            if (!sgRes.ok) {
-                const errData = await sgRes.text();
-                throw new Error(`SendGrid API Error: ${errData}`);
+            if (!brevoRes.ok) {
+                const errData = await brevoRes.text();
+                throw new Error(`Brevo API Error: ${errData}`);
             }
 
-            console.log('✓ Email sent successfully via SendGrid to', ADMIN_EMAIL);
+            console.log('✓ Email sent successfully via Brevo to', ADMIN_EMAIL);
             res.json({ success: true, message: 'Message sent successfully' });
         } catch (error) {
             console.error('Error sending contact email:', error);
@@ -663,7 +659,7 @@ app.post('/api/contact', async (req, res) => {
             res.status(202).json({ success: true, message: 'Message received (email pending verification)' });
         }
     } else {
-        console.log('⚠ SENDGRID_API_KEY not set. Email notifications disabled.');
+        console.log('⚠ BREVO_API_KEY not set. Email notifications disabled.');
         res.json({ success: true, message: 'Message received (email disabled)' });
     }
 });
