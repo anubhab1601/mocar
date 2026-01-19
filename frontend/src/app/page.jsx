@@ -284,7 +284,7 @@ export default function HomePage() {
                   <button
                     onClick={() => window.location.href = '/admin/messages'}
                     className="btn btn-secondary btn-lg"
-                    style={{ marginLeft: 10, background: '#222', border: '1px solid #ffd700' }}
+                    style={{ marginLeft: 10, background: '#222', border: '1px solid #ffd700', padding: '10px 20px', fontSize: '1.2rem' }}
                   >
                     View Inquiries
                   </button>
@@ -538,7 +538,7 @@ export default function HomePage() {
                         <h5>Change Username</h5>
                         <form onSubmit={handleChangeUsername} style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
                           <div style={{ flex: 1, minWidth: 200 }}>
-                            <label style={{ display: 'block', marginBottom: 5, fontSize: '0.9rem' }}>Current Password</label>
+                            <label style={{ display: 'block', marginBottom: 5, fontSize: '0.9rem', color: '#000' }}>Current Password</label>
                             <input
                               type="password"
                               value={changeUserForm.currentPassword}
@@ -548,7 +548,7 @@ export default function HomePage() {
                             />
                           </div>
                           <div style={{ flex: 1, minWidth: 200 }}>
-                            <label style={{ display: 'block', marginBottom: 5, fontSize: '0.9rem' }}>New Username</label>
+                            <label style={{ display: 'block', marginBottom: 5, fontSize: '0.9rem', color: '#000' }}>New Username</label>
                             <input
                               type="text"
                               value={changeUserForm.newUsername}
