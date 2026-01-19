@@ -10,7 +10,10 @@ export default function AdminMessagesPage() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [filterType, setFilterType] = useState('All'); // All, Booking, Contact
+
+    // Filters State
+    const [sortOrder, setSortOrder] = useState('newest'); // 'newest', 'oldest'
+    const [vehicleFilter, setVehicleFilter] = useState('All'); // 'All', 'Car', 'Bike'
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -63,18 +66,42 @@ export default function AdminMessagesPage() {
         }
     };
 
-    const filteredMessages = filterType === 'All'
-        ? messages
-        : filterType === 'Date'
-            ? [...messages].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Sort logic if date selected, though default is sorted
-            : messages.filter(m => filterType === 'Vehicle Type' ? m.inquiry_type === 'Booking' : m.inquiry_type === filterType);
+    const handleReset = () => {
+        setSortOrder('newest');
+        setVehicleFilter('All');
+    };
 
-    // Helper to format message body
+    const filteredMessages = messages
+        .filter(m => {
+            if (vehicleFilter === 'All') return true;
+            // Check if message content contains the vehicle type
+            // The message format is "Vehicle Type: Car" or "Vehicle Type: Bike"
+            return m.message.toLowerCase().includes(`vehicle type: ${vehicleFilter.toLowerCase()}`);
+        })
+        .sort((a, b) => {
+            const dateA = new Date(a.created_at || 0);
+            const dateB = new Date(b.created_at || 0);
+            return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+        });
+
+    // Helper to format message body compact
     const formatMessage = (msg) => {
-        // Simple replace to make it structured
-        return msg.replace(/ Details:/g, "\n\nDetails:")
-            .replace(/•/g, "\n•")
-            .trim();
+        // 1. Ensure "Details:" gets its own line
+        // 2. Ensure bullets get newlines, but NOT double newlines if they are already there
+        let formatted = msg.replace(/ Details:/g, "\nDetails:");
+
+        // Split by bullets and rejoin to normalize spacing
+        // This regex splits by bullet but keeps the delimiter in the result (if we captured it), 
+        // but easier: just replace bullet with newline+bullet, then collapse multiple newlines
+
+        formatted = formatted.replace(/•/g, "\n•");
+
+        // Collapse multiple spaces/newlines into single structure
+        // We want single lines for bullets.
+        // Step 1: Replace multiple newlines with single newline
+        formatted = formatted.replace(/\n\s*\n/g, "\n");
+
+        return formatted.trim();
     };
 
     return (
@@ -90,28 +117,48 @@ export default function AdminMessagesPage() {
                             Admin Inquiries
                         </h1>
 
-                        {/* Filters moved here */}
-                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                            <span style={{ fontWeight: 'bold', color: '#666', fontSize: '0.9rem', marginRight: 5 }}>Filter:</span>
-                            {['All', 'Date', 'Vehicle Type'].map(type => (
-                                <button
-                                    key={type}
-                                    onClick={() => setFilterType(type)}
-                                    style={{
-                                        padding: '6px 16px',
-                                        borderRadius: '20px',
-                                        border: '1px solid #ddd',
-                                        background: filterType === type ? '#222' : '#fff',
-                                        color: filterType === type ? '#FFD700' : '#555',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        fontSize: '0.85rem',
-                                        transition: 'all 0.2s'
-                                    }}
+                        {/* Advanced Filters */}
+                        <div style={{ display: 'flex', gap: 15, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={handleReset}
+                                style={{
+                                    padding: '8px 20px',
+                                    borderRadius: '20px',
+                                    border: '1px solid #ddd',
+                                    background: (vehicleFilter === 'All' && sortOrder === 'newest') ? '#222' : '#fff',
+                                    color: (vehicleFilter === 'All' && sortOrder === 'newest') ? '#FFD700' : '#555',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                All (Reset)
+                            </button>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontWeight: 'bold', color: '#666', fontSize: '0.9rem' }}>Date:</span>
+                                <select
+                                    value={sortOrder}
+                                    onChange={(e) => setSortOrder(e.target.value)}
+                                    style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ccc', cursor: 'pointer' }}
                                 >
-                                    {type}
-                                </button>
-                            ))}
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontWeight: 'bold', color: '#666', fontSize: '0.9rem' }}>Vehicle Type:</span>
+                                <select
+                                    value={vehicleFilter}
+                                    onChange={(e) => setVehicleFilter(e.target.value)}
+                                    style={{ padding: '8px', borderRadius: '5px', border: '1px solid #ccc', cursor: 'pointer' }}
+                                >
+                                    <option value="All">All Types</option>
+                                    <option value="Car">Car</option>
+                                    <option value="Bike">Bike</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -170,7 +217,7 @@ export default function AdminMessagesPage() {
                                     <tr>
                                         <td colSpan="6" style={{ padding: 50, textAlign: 'center', color: '#888' }}>
                                             <i className="fas fa-inbox fa-3x" style={{ marginBottom: 15, opacity: 0.3 }}></i>
-                                            <p>No messages found.</p>
+                                            <p>No messages found matching your filters.</p>
                                         </td>
                                     </tr>
                                 ) : (
